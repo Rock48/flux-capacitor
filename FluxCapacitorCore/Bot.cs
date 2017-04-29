@@ -18,7 +18,7 @@ namespace FluxCapacitorCore
         DateTime lastRestart;
         long restartCD = 3000000000; //5 minutes in nanoseconds
 
-        String[] defaultConfig = { "Tolerance", "2", "", "sar: 0", "", "aliases" };
+        String[] defaultConfig = { "Tolerance", "2", "", "sar: 0", "", "aliases", "", "logchannel", "" };
 
         public Bot()
         {
@@ -430,6 +430,40 @@ namespace FluxCapacitorCore
                 });
         }
 
+        private void registerBanCommand()
+        {
+            commands.CreateCommand("ban")
+                .AddCheck((cm, u, ch) => u.ServerPermissions.Administrator)
+                .Parameter("player", ParameterType.Required)
+                .Parameter("reason", ParameterType.Required)
+                .Do(async (e) =>
+                {
+                    Discord.User target = e.Server.FindUsers(e.GetArg("player")).FirstOrDefault();
+                    if(getLogChannel(e.Server.Id) == "")
+                    {
+                        await e.Channel.SendMessage("You've gotta set a banlog channel with .setlogchannel first.");
+                        return;
+                    }
+                    Discord.Channel logChannel = e.Server.FindChannels(getLogChannel(e.Server.Id)).FirstOrDefault();
+                    await e.Server.Ban(target);
+                    await logChannel.SendMessage("Banned user **" + target.Name + "**. Reason given: " + e.GetArg("reason"));
+                });
+        }
+
+        private void registerSetLogChannelCommand()
+        {
+            commands.CreateCommand("setlogchannel")
+                .AddCheck((cm, u, ch) => u.ServerPermissions.Administrator)
+                .Parameter("channel", ParameterType.Required)
+                .Do(async (e) =>
+                {
+                    var lines = File.ReadAllLines(e.Server.Id + ".txt.");
+                    int index = Array.IndexOf(lines, "logchannel");
+                    lines[index + 1] = e.GetArg("channel");
+                    File.WriteAllLines(e.Server.Id + ".txt", lines);
+                    await e.Channel.SendMessage("Set log channel to " + e.GetArg("channel"));
+                });
+        }
 
         private void initialize()
         {
@@ -448,6 +482,8 @@ namespace FluxCapacitorCore
             registerSetToleranceCommand(); //works; changes the particular server's tolerance level
             registerResetCommand(); //works; resets the bot on a 5min cooldown
             registerHelpCommand(); //works; resets the bot on a 5min cooldown
+            registerBanCommand();
+            registerSetLogChannelCommand();
         }
 
         private bool closeEnough(String source, String test, int tolerance) //tests if a string 'test' is within 'tolerance' characters of 'source'
@@ -517,6 +553,17 @@ namespace FluxCapacitorCore
                 return -1;
             }
             return Convert.ToInt32(lines[Array.IndexOf(lines, "Tolerance") + 1]);
+        }
+
+        private String getLogChannel(ulong server)
+        {
+            var lines = File.ReadAllLines(server + ".txt");
+
+            if (Array.IndexOf(lines, "logchannel") == -1)
+            {
+                return "";
+            }
+            return lines[Array.IndexOf(lines, "logchannel") + 1];
         }
 
         private void Split<T>(T[] array, int index, out T[] first, out T[] second) //splits array into two arrays at point

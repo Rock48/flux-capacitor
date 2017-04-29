@@ -48,9 +48,10 @@ namespace FluxCapacitorCore
         "**.settolerance {newtolerance} -** Sets server tolerance to **newtolerance**, so users can misspell role names by **newtolerance** and still have .iam work\n" +
         "*Example:* .say lobby \"Uh, hey! I heard you requested my documentation, so...\"\n" +
         "\n" +
-        "**.reset -** Resets entire bot in case of errors, can only be used once every five minutes\n" +
+        "**.ban {user} {reason} - **Bans user, then logs the ban and the reason in server log channel\n" +
+        "*Example:* .ban \"Hitler\" \"Controversial ideology\"\n" +
         "\n" +
-        "**.compare {string1} {string2} -** Outputs whether two strings are considered equal by .iam and .iamn\n" +
-        "*Example:* .compare \"Not a Robot\" \"notarobot\"";
+        "**.setlogchannel {channel} -** Sets server log channel to the first channel named *channel*. This is where ban logs are stored.\n" +
+        "*Example:* .setlogchannel ban-log\n";
     }
 }
