@@ -225,6 +225,7 @@ namespace FluxCapacitorCore
                     }
 
                     var lines = File.ReadAllLines(e.Server.Id.ToString() + ".txt");
+                    newrole = e.Server.Roles.ElementAt(index).Name;
 
                     if (Array.IndexOf(lines, newrole) != -1)
                     {
@@ -284,6 +285,7 @@ namespace FluxCapacitorCore
                     }
 
                     var lines = File.ReadAllLines(e.Server.Id.ToString() + ".txt");
+                    newrole = e.Server.Roles.ElementAt(index).Name;
 
                     if (Array.IndexOf(lines, newrole) != -1)
                     {
@@ -455,43 +457,51 @@ namespace FluxCapacitorCore
             { //if the strings are obviously not equal
                 return false;
             }
-            for (int i = 0; i < source.Length - 1; i++)
+            for (int i = 0; i < source.Length; i++)
             {
-                Debug.Write(i + " ");
+                Debug.WriteLine("Iteration: " + i);
+                Debug.WriteLine(test);
+                Debug.WriteLine(source);
+                if (i + tolerance - off >= test.Length) //with zero errors, if the current index checked plus the tolerance is equal to or greater than the length, then even if the last characters are all wrong, it would still work. However, if something is off, you have to check a bit further to make sure off won't exceed tolerance
+                {
+                    return true;
+                }
                 if (!(String.Equals(test.ElementAt(i).ToString(), source.ElementAt(i).ToString(), StringComparison.OrdinalIgnoreCase)))
                 {
                     off++; //increments error number because duh
+                    Debug.WriteLine("off: " + off);
                     if (!(i >= test.Length - 1 || i >= source.Length - 1)) //don't do this if the checks would be outside the bounds of the string
                     {
                         if (String.Equals(test.ElementAt(i).ToString(), source.ElementAt(i + 1).ToString(), StringComparison.OrdinalIgnoreCase)) //in case there was a random letter left out from test
                         {
+                            Debug.WriteLine("Went through leftout check fine.");
                             test = test.Substring(0, i) + " " + test.Substring(i, test.Length - i); //put in a space there so the other letters should be lined up
-                            Debug.WriteLine(test);
                         }
                         if (String.Equals(test.ElementAt(i + 1).ToString(), source.ElementAt(i).ToString(), StringComparison.OrdinalIgnoreCase)) //in case there was a random letter put into test
                         {
-                            test = test.Substring(0, i) + test.Substring(i + 1, test.Length - i); //cut out the letter at i
-                            Debug.WriteLine(test);
+                            Debug.WriteLine("Went through extra check fine.");
+                            test = test.Substring(0, i) + test.Substring(i + 1, test.Length - i - 1); //cut out the letter at i
+                            Debug.WriteLine("Went through extra edit fine.");
                         }
+                    }
+                    if (off > tolerance) //if outside of acceptable error level, return false
+                    {
+                        return false;
                     }
                 }
             }
-
-            if (off <= tolerance) //return true if the number of wrong characters is less than or equal to the tolerance
-            {
-                Debug.WriteLine("closeEnough worked");
-                return true;
-            }
-            Debug.WriteLine("closeEnough worked");
-            return false; //otherwise your string sucks
+            Debug.WriteLine("Returning true");
+            return true;
         }
 
         private int filteredCheck(IEnumerable<Discord.Role> list, String input, ulong serverid)
         {
             for (int i = 0; i < list.Count(); i++)
             {
+                Debug.WriteLine("Checking for similarity to: " + list.ElementAt(i).Name + " with tolerance " + getTolerance(serverid));
                 if (closeEnough(list.ElementAt(i).Name, input, getTolerance(serverid)))
                 {
+                    Debug.WriteLine("Found identical at index " + i);
                     return i;
                 }
             }
@@ -504,10 +514,8 @@ namespace FluxCapacitorCore
 
             if (Array.IndexOf(lines, "Tolerance") == -1)
             {
-                Debug.WriteLine("getTolerance worked");
                 return -1;
             }
-            Debug.WriteLine("getTolerance worked");
             return Convert.ToInt32(lines[Array.IndexOf(lines, "Tolerance") + 1]);
         }
 
