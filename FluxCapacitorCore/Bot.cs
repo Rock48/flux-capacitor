@@ -99,7 +99,6 @@ namespace FluxCapacitorCore
 
         private void registerBestPonyCmd()
         {
-
             commands.CreateCommand("bestpony")
                 .Do(async (e) =>
                 {
@@ -198,6 +197,7 @@ namespace FluxCapacitorCore
                             return;
                         }
                     }
+                    discord.Log.Log(LogSeverity.Error, "Runtime error", "WARNING: .asar failed execution.");
                 });
         }
 
@@ -326,6 +326,7 @@ namespace FluxCapacitorCore
                     File.CreateText(name).Close();
                     File.WriteAllLines(name, defaultConfig);
                     await e.Channel.SendMessage("...alright, I think I'm set.");
+                    discord.Log.Log(LogSeverity.Info, "Initialization", "Initialized on guild " + e.Server.Name + ".");
                 });
         }
 
@@ -370,6 +371,7 @@ namespace FluxCapacitorCore
                     await channel.SendIsTyping();
                     await Task.Delay(delay);
                     await channel.SendMessage(e.GetArg("message"));
+                    discord.Log.Log(LogSeverity.Info, "Message sent", "Send message \"" + e.GetArg("message") + "\" on guild " + e.Server.Name + ".");
                 });
         }
 
@@ -408,6 +410,7 @@ namespace FluxCapacitorCore
                             lines[i + 1] = e.GetArg("newtolerance");
                             File.WriteAllLines(e.Server.Id.ToString() + ".txt", lines);
                             await e.Channel.SendMessage("Your tolerance is now **" + e.GetArg("newtolerance") + ".**");
+                            discord.Log.Log(LogSeverity.Info, "Tolerance change", "Changed tolerance in guild " + e.Server.Name + " to " + e.GetArg("newtolerance") + ".");
                             return;
                         }
                     }
@@ -427,10 +430,12 @@ namespace FluxCapacitorCore
                         lastRestart = DateTime.Now;
                         await e.Channel.SendMessage("`Restart complete. Functionality restored.`");
                         await e.Channel.SendMessage("...huh? What happened?");
+                        discord.Log.Log(LogSeverity.Warning, "Successful restart", "ALERT: Bot was restarted from guild " + e.Server.Name + ".");
                     }
                     else
                     {
                         await e.Channel.SendMessage("`ERROR: MEMORY BANKS NOT FULLY CHARGED. TIME UNTIL RESTART IS AVAILABLE: " + ((restartCD - (DateTime.Now.Ticks - lastRestart.Ticks)) / 10000000) + " SECONDS.`");
+                        discord.Log.Log(LogSeverity.Warning, "Failed restart", "ALERT: Bot restart was attempted from guild " + e.Server.Name + ".");
                     }
                 });
         }
