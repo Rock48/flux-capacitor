@@ -52,6 +52,9 @@ namespace FluxCapacitorCore
         "*Example:* .ban \"Hitler\" \"Controversial ideology\"\n" +
         "\n" +
         "**.setlogchannel {channel} -** Sets server log channel to the first channel named *channel*. This is where ban logs are stored.\n" +
-        "*Example:* .setlogchannel ban-log\n";
+        "*Example:* .setlogchannel ban-log\n" +
+        "\n" +
+        "**.purgeuser {user} {number} - **Deletes a user's past **number** messages on a server, regardless of channel.\n" +
+        "*Example:* .purgeuser Georgelion66 10\n";
     }
 }
