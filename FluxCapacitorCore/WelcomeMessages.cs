@@ -32,7 +32,7 @@ namespace FluxCapacitorCore
         "*Example:* .purge 50 general\n" +
         "\n" +
         "**.asar {role} -**Adds {role} to list of self-assignable roles, so users can add them with .iam\n" +
-        "*Example:* .iam Not a Robot\n" +
+        "*Example:* .asar Not a Robot\n" +
         "\n" +
         "**.iam {role} -**Adds {role} to user, as long as it’s on the list of self-assignable roles\n" +
         "*Example:* .iam Not a Robot\n" +

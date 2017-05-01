@@ -17,6 +17,7 @@ namespace FluxCapacitorCore
         CommandService commands;
         DateTime lastRestart;
         long restartCD = 3000000000; //5 minutes in nanoseconds
+        List<MessageList> messageLists = new List<MessageList>() { };
 
         String[] defaultConfig = { "Tolerance", "2", "", "sar: 0", "", "aliases", "", "logchannel", "" };
 
@@ -37,7 +38,23 @@ namespace FluxCapacitorCore
 
             commands = discord.GetService<CommandService>();
 
+            discord.MessageReceived += (s, e) =>
+            {
+                bool added = false;
+                for(int i = 0; i < messageLists.Count; i++)
+                {
+                    if(messageLists.ElementAt(i).server == e.Message.Server)
+                    {
+                        messageLists.ElementAt(i).add(e.Message);
+                        added = true;
+                    }
+                }
 
+                if (!added)
+                {
+                    messageLists.Add(new MessageList(e.Message.Server, e.Message));
+                }
+            };
 
             initialize();
 
@@ -383,7 +400,7 @@ namespace FluxCapacitorCore
                 .Do(async (e) =>
                 {
                     var lines = File.ReadAllLines(e.Server.Id + ".txt");
-
+                    
                     for (int i = 0; i < lines.Length; i++)
                     {
                         if (lines[i] == "Tolerance")
@@ -396,7 +413,7 @@ namespace FluxCapacitorCore
                     }
                 });
         }
-
+        
         private void registerResetCommand()
         {
             commands.CreateCommand("reset")
@@ -465,6 +482,29 @@ namespace FluxCapacitorCore
                 });
         }
 
+        private void registerPurgeUserCommand()
+        {
+            commands.CreateCommand("purgeuser")
+                .AddCheck((cm, u, ch) => u.ServerPermissions.Administrator)
+                .Parameter("user", ParameterType.Required)
+                .Parameter("num", ParameterType.Required)
+                .Do(async (e) =>
+                {
+                    for(int i = 0; i < messageLists.Count(); i++)
+                    {
+                        Debug.WriteLine(messageLists.ElementAt(i).server);
+                        Debug.WriteLine(e.Server);
+                        if(messageLists.ElementAt(i).server == e.Server)
+                        {
+                            messageLists.ElementAt(i).wipe(e.GetArg("user"), Convert.ToInt32(e.GetArg("num")));
+                            await e.Channel.SendMessage("Got 'em.");
+                            return;
+                        }
+                    }
+                    await e.Channel.SendMessage("Couldn't find that user.");
+                });
+        }
+
         private void initialize()
         {
             registerBestPonyCmd(); //works; displays test message, meant to test if online
@@ -484,6 +524,7 @@ namespace FluxCapacitorCore
             registerHelpCommand(); //works; resets the bot on a 5min cooldown
             registerBanCommand();
             registerSetLogChannelCommand();
+            registerPurgeUserCommand();
         }
 
         private bool closeEnough(String source, String test, int tolerance) //tests if a string 'test' is within 'tolerance' characters of 'source'
