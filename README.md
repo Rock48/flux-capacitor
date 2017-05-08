@@ -42,3 +42,11 @@ Discord bot mainly meant for role management. Allows users to add and remove rol
 *Example:* .setlogchannel ban-log
 
 **.settolerance {newtolerance} -** Sets server tolerance to **newtolerance**, so users can misspell role names by **newtolerance** and still have .iam work
+
+**.spamCD {number} -** Sets how fast pressure decays for users. A higher SpamCD means spam bans people slower.
+
+*Example:* .spamCD 1.5
+     
+**.spamlimit {number} -** Sets how much pressure can be accumulated before a user is banned. A higher SpamLimit means spam bans people slower.
+
+*Example:* .spamlimit 3
