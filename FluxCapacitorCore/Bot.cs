@@ -19,7 +19,7 @@ namespace FluxCapacitorCore
         long restartCD = 3000000000; //5 minutes in nanoseconds
         List<MessageList> messageLists = new List<MessageList>() { };
 
-        String[] defaultConfig = { "Tolerance", "2", "", "sar: 0", "", "aliases", "", "logchannel", "" };
+        String[] defaultConfig = { "Tolerance", "2", "", "sar: 0", "", "aliases", "", "logchannel", "", "spamtolerance", "3", "spamfalloff", "1.5"};
 
         public Bot()
         {
@@ -40,6 +40,10 @@ namespace FluxCapacitorCore
 
             discord.MessageReceived += (s, e) =>
             {
+                if (e.Message.User.IsBot) //can't ban itself for spam
+                {
+                    return;
+                }
                 bool added = false;
                 for(int i = 0; i < messageLists.Count; i++)
                 {
@@ -47,11 +51,13 @@ namespace FluxCapacitorCore
                     {
                         messageLists.ElementAt(i).add(e.Message);
                         added = true;
+                        Debug.WriteLine("added message to the " + messageLists.ElementAt(i).server + " messagelist.");
                     }
                 }
 
                 if (!added)
                 {
+                    Debug.WriteLine("added message list for server " + e.Server.Name);
                     messageLists.Add(new MessageList(e.Message.Server, e.Message));
                 }
             };
@@ -417,7 +423,7 @@ namespace FluxCapacitorCore
                 });
         }
         
-        private void registerResetCommand()
+        /* private void registerResetCommand()
         {
             commands.CreateCommand("reset")
                 .AddCheck((cm, u, ch) => u.ServerPermissions.Administrator)
@@ -427,6 +433,7 @@ namespace FluxCapacitorCore
                     {
                         await discord.Disconnect();
                         await discord.Connect(File.ReadAllText("token"), TokenType.Bot);
+                        Debug.WriteLine("works after reconnect");
                         lastRestart = DateTime.Now;
                         await e.Channel.SendMessage("`Restart complete. Functionality restored.`");
                         await e.Channel.SendMessage("...huh? What happened?");
@@ -438,7 +445,7 @@ namespace FluxCapacitorCore
                         discord.Log.Log(LogSeverity.Warning, "Failed restart", "ALERT: Bot restart was attempted from guild " + e.Server.Name + ".");
                     }
                 });
-        }
+        } */
 
         private void registerHelpCommand()
         {
@@ -483,7 +490,38 @@ namespace FluxCapacitorCore
                     int index = Array.IndexOf(lines, "logchannel");
                     lines[index + 1] = e.GetArg("channel");
                     File.WriteAllLines(e.Server.Id + ".txt", lines);
-                    await e.Channel.SendMessage("Set log channel to " + e.GetArg("channel"));
+                    await e.Channel.SendMessage("Set log channel to **" + e.GetArg("channel") + "**.");
+                });
+        }
+
+        private void registerSetSpamLimitCommand()
+        {
+            commands.CreateCommand("spamlimit")
+                .AddCheck((cm, u, ch) => u.ServerPermissions.Administrator)
+                .Parameter("n", ParameterType.Required)
+                .Do(async (e) =>
+                {
+                    var lines = File.ReadAllLines(e.Server.Id + ".txt.");
+                    int index = Array.IndexOf(lines, "spamtolerance");
+                    lines[index + 1] = e.GetArg("n");
+                    File.WriteAllLines(e.Server.Id + ".txt", lines);
+                    await e.Channel.SendMessage("Set spam limit to **" + e.GetArg("n") + "**.");
+                });
+        }
+
+        private void registerSetSpamCDCommand()
+        {
+            commands.CreateCommand("spamcd")
+                .AddCheck((cm, u, ch) => u.ServerPermissions.Administrator)
+                .Parameter("n", ParameterType.Required)
+                .Do(async (e) =>
+                {
+                    var lines = File.ReadAllLines(e.Server.Id + ".txt.");
+                    int index = Array.IndexOf(lines, "spamfalloff");
+                    lines[index + 1] = e.GetArg("n");
+                    Debug.WriteLine(e.GetArg("n"));
+                    File.WriteAllLines(e.Server.Id + ".txt", lines);
+                    await e.Channel.SendMessage("Set spam falloff to **" + e.GetArg("n") + "**.");
                 });
         }
 
@@ -525,11 +563,13 @@ namespace FluxCapacitorCore
             registerSayCommand(); //mostly works; prints message in given channel, seems to work in all channels except general
             registerCompareCommand(); //works; tells whether two strings interpreted the same with the server's current tolerance
             registerSetToleranceCommand(); //works; changes the particular server's tolerance level
-            registerResetCommand(); //works; resets the bot on a 5min cooldown
+            // registerResetCommand(); //doesn't work; resets the bot on a 5min cooldown
             registerHelpCommand(); //works; resets the bot on a 5min cooldown
             registerBanCommand();
             registerSetLogChannelCommand();
             registerPurgeUserCommand();
+            registerSetSpamCDCommand();
+            registerSetSpamLimitCommand();
         }
 
         private bool closeEnough(String source, String test, int tolerance) //tests if a string 'test' is within 'tolerance' characters of 'source'
@@ -541,9 +581,6 @@ namespace FluxCapacitorCore
             }
             for (int i = 0; i < source.Length; i++)
             {
-                Debug.WriteLine("Iteration: " + i);
-                Debug.WriteLine(test);
-                Debug.WriteLine(source);
                 if (i + tolerance - off >= test.Length) //with zero errors, if the current index checked plus the tolerance is equal to or greater than the length, then even if the last characters are all wrong, it would still work. However, if something is off, you have to check a bit further to make sure off won't exceed tolerance
                 {
                     return true;
@@ -556,14 +593,11 @@ namespace FluxCapacitorCore
                     {
                         if (String.Equals(test.ElementAt(i).ToString(), source.ElementAt(i + 1).ToString(), StringComparison.OrdinalIgnoreCase)) //in case there was a random letter left out from test
                         {
-                            Debug.WriteLine("Went through leftout check fine.");
                             test = test.Substring(0, i) + " " + test.Substring(i, test.Length - i); //put in a space there so the other letters should be lined up
                         }
                         if (String.Equals(test.ElementAt(i + 1).ToString(), source.ElementAt(i).ToString(), StringComparison.OrdinalIgnoreCase)) //in case there was a random letter put into test
                         {
-                            Debug.WriteLine("Went through extra check fine.");
                             test = test.Substring(0, i) + test.Substring(i + 1, test.Length - i - 1); //cut out the letter at i
-                            Debug.WriteLine("Went through extra edit fine.");
                         }
                     }
                     if (off > tolerance) //if outside of acceptable error level, return false
@@ -590,7 +624,7 @@ namespace FluxCapacitorCore
             return -1;
         }
 
-        private int getTolerance(ulong server)
+        public int getTolerance(ulong server)
         {
             var lines = File.ReadAllLines(server + ".txt");
 
@@ -601,7 +635,7 @@ namespace FluxCapacitorCore
             return Convert.ToInt32(lines[Array.IndexOf(lines, "Tolerance") + 1]);
         }
 
-        private String getLogChannel(ulong server)
+        public String getLogChannel(ulong server)
         {
             var lines = File.ReadAllLines(server + ".txt");
 
