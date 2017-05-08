@@ -55,10 +55,6 @@ namespace FluxCapacitorCore
             {
                 factor *= 1.5;
             }
-            if (factor > getSpamCD(server.Id)/2)
-            {
-                factor = 2;
-            }
             up.pressure -= (getSpamCD(server.Id) * timeSince);
             if(factor < getSpamCD(server.Id)/2)
             {
