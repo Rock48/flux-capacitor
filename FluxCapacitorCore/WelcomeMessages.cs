@@ -55,6 +55,11 @@ namespace FluxCapacitorCore
         "*Example:* .setlogchannel ban-log\n" +
         "\n" +
         "**.purgeuser {user} {number} - **Deletes a user's past **number** messages on a server, regardless of channel.\n" +
-        "*Example:* .purgeuser Georgelion66 10\n";
+        "*Example:* .purgeuser Georgelion66 10\n" +
+        "**.spamCD {number} -** Sets how fast pressure decays for users. A higher SpamCD means spam bans people slower.\n" +
+        "*Example:* .spamCD 1.5 \n" +
+        "\n" + 
+        "**.spamlimit {number} -** Sets how much pressure can be accumulated before a user is banned. A higher SpamLimit means spam bans people slower.\n" +
+        "*Example:* .spamlimit 3 \n";
     }
 }
