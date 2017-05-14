@@ -108,7 +108,7 @@ namespace FluxCapacitorCore
             commands.CreateCommand("bestpony")
                 .Do(async (e) =>
                 {
-                    await e.Channel.SendMessage("Uh... Lightning Dust, I guess?");
+                    await e.Channel.SendMessage("Braeburn for sure");
                 });
         }
 
